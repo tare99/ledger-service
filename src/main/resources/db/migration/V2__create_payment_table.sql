@@ -19,7 +19,6 @@ CREATE INDEX idx_payment_idempotency_key ON payment (idempotency_key);
 CREATE INDEX idx_payment_sender_account_id ON payment (sender_account_id);
 CREATE INDEX idx_payment_receiver_account_id ON payment (receiver_account_id);
 CREATE INDEX idx_payment_reference ON payment (payment_reference);
--- Composite index for common filtered queries (e.g., list payments by sender + status)
 CREATE INDEX idx_payment_sender_status_created
     ON payment (sender_account_id, status, created_at);
 CREATE INDEX idx_payment_sender_status
