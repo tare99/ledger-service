@@ -5,7 +5,7 @@ import io.github.tare99.paymentprocessor.api.request.PaymentStatus;
 import java.math.BigDecimal;
 
 public record CreatePaymentResponse(
-    String transactionId,
+    String paymentId,
     String senderAccountId,
     String receiverAccountId,
     BigDecimal amount,

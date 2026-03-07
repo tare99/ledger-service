@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public record PaymentResponse(
-    String transactionId,
+    String paymentId,
     String senderAccountId,
     String receiverAccountId,
     BigDecimal amount,
