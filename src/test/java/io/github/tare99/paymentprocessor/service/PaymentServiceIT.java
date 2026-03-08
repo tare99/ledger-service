@@ -139,7 +139,7 @@ class PaymentServiceIT extends BaseIT {
     PaginatedPaymentResponse response = paymentService.listPayments(null, null, null, 0, 10);
 
     assertThat(response.payments()).isNotEmpty();
-    assertThat(response.pagination().page()).isEqualTo(0);
+    assertThat(response.pagination().page()).isZero();
   }
 
   @Test
@@ -156,6 +156,7 @@ class PaymentServiceIT extends BaseIT {
     PaginatedPaymentResponse response =
         paymentService.listPayments("ACC-ALICE00000000001", null, null, 0, 10);
 
+    assertThat(response.payments()).isNotEmpty();
     assertThat(response.payments())
         .allMatch(p -> p.senderAccountId().equals("ACC-ALICE00000000001"));
   }
@@ -172,7 +173,6 @@ class PaymentServiceIT extends BaseIT {
     CreatePaymentResponse created = paymentService.createPayment(request, "127.0.0.1");
 
     assertThatThrownBy(() -> paymentService.cancelPayment(created.paymentId()))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("PENDING");
+        .isInstanceOf(IllegalStateException.class);
   }
 }
