@@ -2,9 +2,7 @@ package io.github.tare99.paymentprocessor.entity;
 
 import io.github.tare99.paymentprocessor.api.request.Currency;
 import io.github.tare99.paymentprocessor.exception.InsufficientFundsException;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -16,48 +14,36 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "account")
-@EntityListeners(AuditingEntityListener.class)
 @Getter
-@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class Account {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(name = "account_number", unique = true, nullable = false, length = 20)
   private String accountNumber;
 
-  @Column(name = "owner_name", nullable = false, length = 100)
   private String ownerName;
 
-  @Column(nullable = false)
   private String email;
 
-  @Column(nullable = false, precision = 15, scale = 2)
   private BigDecimal balance;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 3)
   private Currency currency;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 20)
   private AccountStatus status;
 
-  @CreatedDate
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
+  @CreationTimestamp private Instant createdAt;
 
-  @LastModifiedDate
-  @Column(name = "updated_at", nullable = false)
-  private Instant updatedAt;
+  @UpdateTimestamp private Instant updatedAt;
 
   @Version private Long version;
 
