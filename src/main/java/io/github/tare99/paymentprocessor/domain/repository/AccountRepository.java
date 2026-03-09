@@ -15,6 +15,5 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT a FROM Account a WHERE a.accountNumber IN :accountNumbers ORDER BY a.id")
-  List<Account> findByAccountNumbersForUpdate(
-      @Param("accountNumbers") Set<String> accountNumbers);
+  List<Account> findByAccountNumbersForUpdate(@Param("accountNumbers") Set<String> accountNumbers);
 }

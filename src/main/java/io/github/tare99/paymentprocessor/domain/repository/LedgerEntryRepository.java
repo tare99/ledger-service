@@ -19,8 +19,7 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, Long> 
   @Query(
       "SELECT le FROM LedgerEntry le JOIN FETCH le.account"
           + " WHERE le.payment.id IN :paymentIds ORDER BY le.id ASC")
-  List<LedgerEntry> findEntriesWithAccountByPaymentIds(
-      @Param("paymentIds") List<Long> paymentIds);
+  List<LedgerEntry> findEntriesWithAccountByPaymentIds(@Param("paymentIds") List<Long> paymentIds);
 
   @Query(
       """

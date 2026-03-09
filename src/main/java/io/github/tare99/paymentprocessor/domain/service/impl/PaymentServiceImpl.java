@@ -91,6 +91,7 @@ public class PaymentServiceImpl implements PaymentService {
         request.currency());
     return paymentMapper.toCreatePaymentResponse(payment, entries);
   }
+
   @Override
   @Transactional
   public RefundPaymentResponse refundPayment(String paymentId) {
@@ -126,7 +127,6 @@ public class PaymentServiceImpl implements PaymentService {
         paymentId, amount, sender.getCurrency(), PaymentStatus.REFUNDED);
   }
 
-
   @Override
   @Transactional(readOnly = true)
   public PaymentResponse getPayment(String paymentId) {
@@ -157,8 +157,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     return paymentMapper.toPaginatedResponse(resultPage, entriesByPaymentId);
   }
-
-
 
   @Override
   @Transactional(readOnly = true)
