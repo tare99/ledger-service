@@ -13,17 +13,16 @@ class AccountServiceIT extends BaseIT {
   @Autowired private AccountService accountService;
 
   @Test
-  void getActiveAccountByNumberReturnsAccount() {
-    Account account = accountService.getActiveAccountByNumber("ACC-ALICE00000000001");
+  void getAccountByNumberReturnsAccount() {
+    Account account = accountService.getAccountByNumber("ACC-ALICE00000000001");
 
     assertThat(account).isNotNull();
     assertThat(account.getAccountNumber()).isEqualTo("ACC-ALICE00000000001");
-    assertThat(account.getOwnerName()).isEqualTo("Alice Johnson");
   }
 
   @Test
-  void getActiveAccountByNumberThrowsWhenNotFound() {
-    assertThatThrownBy(() -> accountService.getActiveAccountByNumber("ACC-NONEXISTENT"))
+  void getAccountByNumberThrowsWhenNotFound() {
+    assertThatThrownBy(() -> accountService.getAccountByNumber("ACC-NONEXISTENT"))
         .isInstanceOf(AccountNotFoundException.class);
   }
 }

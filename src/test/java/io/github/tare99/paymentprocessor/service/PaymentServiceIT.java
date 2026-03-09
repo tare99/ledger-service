@@ -10,9 +10,14 @@ import io.github.tare99.paymentprocessor.api.response.CreatePaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaginatedPaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaymentStatusResponse;
+import io.github.tare99.paymentprocessor.api.response.RefundPaymentResponse;
+import io.github.tare99.paymentprocessor.entity.EntryType;
+import io.github.tare99.paymentprocessor.entity.LedgerEntry;
 import io.github.tare99.paymentprocessor.exception.AccountNotFoundException;
 import io.github.tare99.paymentprocessor.exception.PaymentNotFoundException;
+import io.github.tare99.paymentprocessor.repository.LedgerEntryRepository;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 class PaymentServiceIT extends BaseIT {
 
   @Autowired private PaymentService paymentService;
+  @Autowired private LedgerEntryRepository ledgerEntryRepository;
 
   @Test
   void createPaymentSucceeds() {
@@ -31,7 +37,7 @@ class PaymentServiceIT extends BaseIT {
             new BigDecimal("50.00"),
             Currency.USD);
 
-    CreatePaymentResponse response = paymentService.createPayment(request, "127.0.0.1");
+    CreatePaymentResponse response = paymentService.createPayment(request);
 
     assertThat(response.paymentId()).isNotBlank();
     assertThat(response.senderAccountId()).isEqualTo("ACC-ALICE00000000001");
@@ -51,8 +57,8 @@ class PaymentServiceIT extends BaseIT {
             new BigDecimal("25.00"),
             Currency.USD);
 
-    CreatePaymentResponse first = paymentService.createPayment(request, "127.0.0.1");
-    CreatePaymentResponse second = paymentService.createPayment(request, "127.0.0.1");
+    CreatePaymentResponse first = paymentService.createPayment(request);
+    CreatePaymentResponse second = paymentService.createPayment(request);
 
     assertThat(first.paymentId()).isEqualTo(second.paymentId());
   }
@@ -67,7 +73,7 @@ class PaymentServiceIT extends BaseIT {
             new BigDecimal("10.00"),
             Currency.USD);
 
-    assertThatThrownBy(() -> paymentService.createPayment(request, "127.0.0.1"))
+    assertThatThrownBy(() -> paymentService.createPayment(request))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -81,7 +87,7 @@ class PaymentServiceIT extends BaseIT {
             new BigDecimal("10.00"),
             Currency.USD);
 
-    assertThatThrownBy(() -> paymentService.createPayment(request, "127.0.0.1"))
+    assertThatThrownBy(() -> paymentService.createPayment(request))
         .isInstanceOf(AccountNotFoundException.class);
   }
 
@@ -94,7 +100,7 @@ class PaymentServiceIT extends BaseIT {
             "ACC-BOB000000000002",
             new BigDecimal("30.00"),
             Currency.USD);
-    CreatePaymentResponse created = paymentService.createPayment(request, "127.0.0.1");
+    CreatePaymentResponse created = paymentService.createPayment(request);
 
     PaymentResponse response = paymentService.getPayment(created.paymentId());
 
@@ -118,7 +124,7 @@ class PaymentServiceIT extends BaseIT {
             "ACC-BOB000000000002",
             new BigDecimal("15.00"),
             Currency.USD);
-    CreatePaymentResponse created = paymentService.createPayment(request, "127.0.0.1");
+    CreatePaymentResponse created = paymentService.createPayment(request);
 
     PaymentStatusResponse status = paymentService.getPaymentStatus(created.paymentId());
 
@@ -134,7 +140,7 @@ class PaymentServiceIT extends BaseIT {
             "ACC-BOB000000000002",
             new BigDecimal("5.00"),
             Currency.USD);
-    paymentService.createPayment(request, "127.0.0.1");
+    paymentService.createPayment(request);
 
     PaginatedPaymentResponse response = paymentService.listPayments(null, null, null, 0, 10);
 
@@ -151,7 +157,7 @@ class PaymentServiceIT extends BaseIT {
             "ACC-BOB000000000002",
             new BigDecimal("5.00"),
             Currency.USD);
-    paymentService.createPayment(request, "127.0.0.1");
+    paymentService.createPayment(request);
 
     PaginatedPaymentResponse response =
         paymentService.listPayments("ACC-ALICE00000000001", null, null, 0, 10);
@@ -162,7 +168,51 @@ class PaymentServiceIT extends BaseIT {
   }
 
   @Test
-  void cancelCompletedPaymentThrows() {
+  void createPaymentWritesTwoLedgerEntries() {
+    var request =
+        new CreatePaymentRequest(
+            UUID.randomUUID().toString(),
+            "ACC-ALICE00000000001",
+            "ACC-BOB000000000002",
+            new BigDecimal("100.00"),
+            Currency.USD);
+
+    CreatePaymentResponse response = paymentService.createPayment(request);
+
+    List<LedgerEntry> entries =
+        ledgerEntryRepository.findByPaymentPaymentIdOrderByIdAsc(response.paymentId());
+    assertThat(entries).hasSize(2);
+
+    LedgerEntry debit = entries.get(0);
+    assertThat(debit.getEntryType()).isEqualTo(EntryType.DEBIT);
+    assertThat(debit.getAmount()).isEqualByComparingTo("100.00");
+
+    LedgerEntry credit = entries.get(1);
+    assertThat(credit.getEntryType()).isEqualTo(EntryType.CREDIT);
+    assertThat(credit.getAmount()).isEqualByComparingTo("100.00");
+  }
+
+  @Test
+  void idempotentPaymentDoesNotDuplicateLedgerEntries() {
+    String requestId = UUID.randomUUID().toString();
+    var request =
+        new CreatePaymentRequest(
+            requestId,
+            "ACC-ALICE00000000001",
+            "ACC-BOB000000000002",
+            new BigDecimal("20.00"),
+            Currency.USD);
+
+    CreatePaymentResponse first = paymentService.createPayment(request);
+    paymentService.createPayment(request);
+
+    List<LedgerEntry> entries =
+        ledgerEntryRepository.findByPaymentPaymentIdOrderByIdAsc(first.paymentId());
+    assertThat(entries).hasSize(2);
+  }
+
+  @Test
+  void refundCompletedPaymentSucceeds() {
     var request =
         new CreatePaymentRequest(
             UUID.randomUUID().toString(),
@@ -170,9 +220,28 @@ class PaymentServiceIT extends BaseIT {
             "ACC-BOB000000000002",
             new BigDecimal("10.00"),
             Currency.USD);
-    CreatePaymentResponse created = paymentService.createPayment(request, "127.0.0.1");
+    CreatePaymentResponse created = paymentService.createPayment(request);
 
-    assertThatThrownBy(() -> paymentService.cancelPayment(created.paymentId()))
+    RefundPaymentResponse refund = paymentService.refundPayment(created.paymentId());
+
+    assertThat(refund.paymentId()).isEqualTo(created.paymentId());
+    assertThat(refund.refundedAmount()).isEqualByComparingTo("10.00");
+    assertThat(refund.status()).isEqualTo(PaymentStatus.REFUNDED);
+  }
+
+  @Test
+  void refundNonCompletedPaymentThrows() {
+    var request =
+        new CreatePaymentRequest(
+            UUID.randomUUID().toString(),
+            "ACC-ALICE00000000001",
+            "ACC-BOB000000000002",
+            new BigDecimal("10.00"),
+            Currency.USD);
+    CreatePaymentResponse created = paymentService.createPayment(request);
+    paymentService.refundPayment(created.paymentId());
+
+    assertThatThrownBy(() -> paymentService.refundPayment(created.paymentId()))
         .isInstanceOf(IllegalStateException.class);
   }
 }

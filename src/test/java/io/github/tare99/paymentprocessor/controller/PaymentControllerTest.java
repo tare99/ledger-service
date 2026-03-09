@@ -11,14 +11,15 @@ import io.github.tare99.paymentprocessor.api.controller.PaymentController;
 import io.github.tare99.paymentprocessor.api.request.CreatePaymentRequest;
 import io.github.tare99.paymentprocessor.api.request.Currency;
 import io.github.tare99.paymentprocessor.api.request.PaymentStatus;
-import io.github.tare99.paymentprocessor.api.response.CancelPaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.CreatePaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaginatedPaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaginatedPaymentResponse.PaginationResponse;
 import io.github.tare99.paymentprocessor.api.response.PaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaymentStatusResponse;
+import io.github.tare99.paymentprocessor.api.response.RefundPaymentResponse;
+import io.github.tare99.paymentprocessor.exception.AccountNotFoundException;
 import io.github.tare99.paymentprocessor.exception.PaymentNotFoundException;
-import io.github.tare99.paymentprocessor.security.JwtAuthenticationFilter;
+import io.github.tare99.paymentprocessor.security.ApiKeyAuthenticationFilter;
 import io.github.tare99.paymentprocessor.service.PaymentService;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -39,7 +40,7 @@ class PaymentControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @MockitoBean private PaymentService paymentService;
-  @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+  @MockitoBean private ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
 
   @Test
   void createPaymentReturns201() throws Exception {
@@ -59,7 +60,7 @@ class PaymentControllerTest {
             Currency.USD,
             PaymentStatus.COMPLETED);
 
-    when(paymentService.createPayment(any(), any())).thenReturn(response);
+    when(paymentService.createPayment(any())).thenReturn(response);
 
     mockMvc
         .perform(
@@ -141,15 +142,42 @@ class PaymentControllerTest {
   }
 
   @Test
-  void cancelPaymentReturnsOk() throws Exception {
-    var response = new CancelPaymentResponse("Payment PAY-123 cancelled successfully");
+  void refundPaymentReturnsOk() throws Exception {
+    var response =
+        new RefundPaymentResponse(
+            "PAY-123", new BigDecimal("100.00"), Currency.USD, PaymentStatus.REFUNDED);
 
-    when(paymentService.cancelPayment("PAY-123")).thenReturn(response);
+    when(paymentService.refundPayment("PAY-123")).thenReturn(response);
 
     mockMvc
-        .perform(post("/api/v1/payments/PAY-123/cancel"))
+        .perform(post("/api/v1/payments/PAY-123/refund"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.message").value("Payment PAY-123 cancelled successfully"));
+        .andExpect(jsonPath("$.paymentId").value("PAY-123"))
+        .andExpect(jsonPath("$.refundedAmount").value(100.00))
+        .andExpect(jsonPath("$.status").value("REFUNDED"));
+  }
+
+  @Test
+  void createPaymentWithNonExistentAccountReturns404() throws Exception {
+    var request =
+        new CreatePaymentRequest(
+            "req-1",
+            "ACC-NONEXISTENT00001",
+            "ACC-BOB000000000002",
+            new BigDecimal("100.00"),
+            Currency.USD);
+
+    when(paymentService.createPayment(any()))
+        .thenThrow(new AccountNotFoundException("Account not found: ACC-NONEXISTENT00001"));
+
+    mockMvc
+        .perform(
+            post("/api/v1/payments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error").value("Account Not Found"))
+        .andExpect(jsonPath("$.message").value("Account not found: ACC-NONEXISTENT00001"));
   }
 
   @Test
