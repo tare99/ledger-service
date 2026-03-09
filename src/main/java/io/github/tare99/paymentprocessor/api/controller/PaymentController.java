@@ -2,11 +2,11 @@ package io.github.tare99.paymentprocessor.api.controller;
 
 import io.github.tare99.paymentprocessor.api.request.CreatePaymentRequest;
 import io.github.tare99.paymentprocessor.api.request.PaymentStatus;
-import io.github.tare99.paymentprocessor.api.response.CancelPaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.CreatePaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaginatedPaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaymentStatusResponse;
+import io.github.tare99.paymentprocessor.api.response.RefundPaymentResponse;
 import io.github.tare99.paymentprocessor.service.PaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -32,10 +32,9 @@ public class PaymentController {
 
   @PostMapping
   public ResponseEntity<CreatePaymentResponse> createPayment(
-      @Valid @RequestBody CreatePaymentRequest request, HttpServletRequest servletRequest) {
-    String clientIp = servletRequest.getRemoteAddr();
+      @Valid @RequestBody CreatePaymentRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(paymentService.createPayment(request, clientIp));
+        .body(paymentService.createPayment(request));
   }
 
   @GetMapping("/{id}")
@@ -54,9 +53,9 @@ public class PaymentController {
         paymentService.listPayments(senderAccountId, receiverAccountId, status, page, size));
   }
 
-  @PostMapping("/{id}/cancel")
-  public ResponseEntity<CancelPaymentResponse> cancelPayment(@PathVariable String id) {
-    return ResponseEntity.ok(paymentService.cancelPayment(id));
+  @PostMapping("/{id}/refund")
+  public ResponseEntity<RefundPaymentResponse> refundPayment(@PathVariable String id) {
+    return ResponseEntity.ok(paymentService.refundPayment(id));
   }
 
   @GetMapping("/{id}/status")
