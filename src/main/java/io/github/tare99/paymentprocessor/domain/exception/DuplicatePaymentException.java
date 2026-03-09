@@ -1,4 +1,4 @@
-package io.github.tare99.paymentprocessor.exception;
+package io.github.tare99.paymentprocessor.domain.exception;
 
 public class DuplicatePaymentException extends RuntimeException {
 

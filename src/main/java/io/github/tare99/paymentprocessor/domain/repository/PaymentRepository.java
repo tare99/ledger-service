@@ -1,6 +1,6 @@
-package io.github.tare99.paymentprocessor.repository;
+package io.github.tare99.paymentprocessor.domain.repository;
 
-import io.github.tare99.paymentprocessor.entity.Payment;
+import io.github.tare99.paymentprocessor.domain.entity.Payment;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

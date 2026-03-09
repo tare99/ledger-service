@@ -1,4 +1,4 @@
-package io.github.tare99.paymentprocessor.service;
+package io.github.tare99.paymentprocessor.domain.service;
 
 import io.github.tare99.paymentprocessor.api.request.CreatePaymentRequest;
 import io.github.tare99.paymentprocessor.api.request.PaymentStatus;

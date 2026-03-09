@@ -1,7 +1,7 @@
-package io.github.tare99.paymentprocessor.entity;
+package io.github.tare99.paymentprocessor.domain.entity;
 
 import io.github.tare99.paymentprocessor.api.request.Currency;
-import io.github.tare99.paymentprocessor.exception.InsufficientFundsException;
+import io.github.tare99.paymentprocessor.domain.exception.InsufficientFundsException;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

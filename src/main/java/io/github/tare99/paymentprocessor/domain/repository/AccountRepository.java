@@ -1,6 +1,6 @@
-package io.github.tare99.paymentprocessor.repository;
+package io.github.tare99.paymentprocessor.domain.repository;
 
-import io.github.tare99.paymentprocessor.entity.Account;
+import io.github.tare99.paymentprocessor.domain.entity.Account;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;

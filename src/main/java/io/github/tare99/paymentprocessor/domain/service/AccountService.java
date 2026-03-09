@@ -1,7 +1,7 @@
-package io.github.tare99.paymentprocessor.service;
+package io.github.tare99.paymentprocessor.domain.service;
 
-import io.github.tare99.paymentprocessor.entity.Account;
-import io.github.tare99.paymentprocessor.service.dto.SenderAndReceiver;
+import io.github.tare99.paymentprocessor.domain.entity.Account;
+import io.github.tare99.paymentprocessor.domain.service.dto.SenderAndReceiver;
 
 public interface AccountService {
   Account getAccountByNumber(String accountNumber);

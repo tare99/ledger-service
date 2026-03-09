@@ -1,10 +1,10 @@
-package io.github.tare99.paymentprocessor.service.impl;
+package io.github.tare99.paymentprocessor.domain.service.impl;
 
-import io.github.tare99.paymentprocessor.entity.Account;
-import io.github.tare99.paymentprocessor.exception.AccountNotFoundException;
-import io.github.tare99.paymentprocessor.repository.AccountRepository;
-import io.github.tare99.paymentprocessor.service.AccountService;
-import io.github.tare99.paymentprocessor.service.dto.SenderAndReceiver;
+import io.github.tare99.paymentprocessor.domain.entity.Account;
+import io.github.tare99.paymentprocessor.domain.exception.AccountNotFoundException;
+import io.github.tare99.paymentprocessor.domain.repository.AccountRepository;
+import io.github.tare99.paymentprocessor.domain.service.AccountService;
+import io.github.tare99.paymentprocessor.domain.service.dto.SenderAndReceiver;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

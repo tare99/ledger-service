@@ -1,4 +1,4 @@
-package io.github.tare99.paymentprocessor.entity;
+package io.github.tare99.paymentprocessor.domain.entity;
 
 import com.github.f4b6a3.ulid.UlidCreator;
 import io.github.tare99.paymentprocessor.api.request.PaymentStatus;

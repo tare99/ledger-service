@@ -1,6 +1,6 @@
-package io.github.tare99.paymentprocessor.repository;
+package io.github.tare99.paymentprocessor.domain.repository;
 
-import io.github.tare99.paymentprocessor.entity.LedgerEntry;
+import io.github.tare99.paymentprocessor.domain.entity.LedgerEntry;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

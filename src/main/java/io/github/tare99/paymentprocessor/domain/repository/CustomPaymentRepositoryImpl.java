@@ -1,6 +1,6 @@
-package io.github.tare99.paymentprocessor.repository;
+package io.github.tare99.paymentprocessor.domain.repository;
 
-import io.github.tare99.paymentprocessor.entity.Payment;
+import io.github.tare99.paymentprocessor.domain.entity.Payment;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 

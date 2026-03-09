@@ -1,13 +1,13 @@
-package io.github.tare99.paymentprocessor.mapper;
+package io.github.tare99.paymentprocessor.domain.mapper;
 
 import io.github.tare99.paymentprocessor.api.request.CreatePaymentRequest;
 import io.github.tare99.paymentprocessor.api.response.CreatePaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaginatedPaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaginatedPaymentResponse.PaginationResponse;
 import io.github.tare99.paymentprocessor.api.response.PaymentResponse;
-import io.github.tare99.paymentprocessor.entity.EntryType;
-import io.github.tare99.paymentprocessor.entity.LedgerEntry;
-import io.github.tare99.paymentprocessor.entity.Payment;
+import io.github.tare99.paymentprocessor.domain.entity.EntryType;
+import io.github.tare99.paymentprocessor.domain.entity.LedgerEntry;
+import io.github.tare99.paymentprocessor.domain.entity.Payment;
 import java.util.List;
 import java.util.Map;
 import org.springframework.data.domain.Page;

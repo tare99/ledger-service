@@ -17,10 +17,10 @@ import io.github.tare99.paymentprocessor.api.response.PaginatedPaymentResponse.P
 import io.github.tare99.paymentprocessor.api.response.PaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaymentStatusResponse;
 import io.github.tare99.paymentprocessor.api.response.RefundPaymentResponse;
-import io.github.tare99.paymentprocessor.exception.AccountNotFoundException;
-import io.github.tare99.paymentprocessor.exception.PaymentNotFoundException;
+import io.github.tare99.paymentprocessor.domain.exception.AccountNotFoundException;
+import io.github.tare99.paymentprocessor.domain.exception.PaymentNotFoundException;
 import io.github.tare99.paymentprocessor.security.ApiKeyAuthenticationFilter;
-import io.github.tare99.paymentprocessor.service.PaymentService;
+import io.github.tare99.paymentprocessor.domain.service.PaymentService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;

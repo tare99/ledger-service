@@ -1,10 +1,10 @@
 package io.github.tare99.paymentprocessor.api.advice;
 
 import io.github.tare99.paymentprocessor.api.response.ErrorResponse;
-import io.github.tare99.paymentprocessor.exception.AccountNotFoundException;
-import io.github.tare99.paymentprocessor.exception.DuplicatePaymentException;
-import io.github.tare99.paymentprocessor.exception.InsufficientFundsException;
-import io.github.tare99.paymentprocessor.exception.PaymentNotFoundException;
+import io.github.tare99.paymentprocessor.domain.exception.AccountNotFoundException;
+import io.github.tare99.paymentprocessor.domain.exception.DuplicatePaymentException;
+import io.github.tare99.paymentprocessor.domain.exception.InsufficientFundsException;
+import io.github.tare99.paymentprocessor.domain.exception.PaymentNotFoundException;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

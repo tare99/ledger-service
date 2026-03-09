@@ -1,4 +1,4 @@
-package io.github.tare99.paymentprocessor.entity;
+package io.github.tare99.paymentprocessor.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
