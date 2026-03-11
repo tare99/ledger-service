@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
+import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
@@ -46,7 +46,7 @@ public class LedgerEntry {
 
   private BigDecimal balanceAfter;
 
-  @CreatedDate private Instant createdAt;
+  @CreationTimestamp private Instant createdAt;
 
   public LedgerEntry(
       Payment payment,

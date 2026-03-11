@@ -95,13 +95,12 @@ public class PaymentServiceImpl implements PaymentService {
   @Override
   @Transactional
   public RefundPaymentResponse refundPayment(String paymentId) {
-    Payment payment = getPaymentByIdForUpdate(paymentId);
-    if (payment.getStatus() != PaymentStatus.COMPLETED) {
-      throw new IllegalStateException(
-          "Cannot refund payment in state: "
-              + payment.getStatus()
-              + ". Only COMPLETED payments can be refunded.");
+    Optional<Payment> optionalPayment =
+        paymentRepository.findByPaymentIdAndStatusForUpdate(paymentId, PaymentStatus.COMPLETED);
+    if (optionalPayment.isEmpty()) {
+      throw new IllegalStateException("Payment not found or not in COMPLETED status");
     }
+    Payment payment = optionalPayment.get();
 
     List<LedgerEntry> originalEntries =
         ledgerEntryRepository.findEntriesWithAccount(payment.getId());
@@ -178,12 +177,6 @@ public class PaymentServiceImpl implements PaymentService {
   private Payment getPaymentById(String paymentId) {
     return paymentRepository
         .findByPaymentId(paymentId)
-        .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
-  }
-
-  private Payment getPaymentByIdForUpdate(String paymentId) {
-    return paymentRepository
-        .findByPaymentIdForUpdate(paymentId)
         .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
   }
 

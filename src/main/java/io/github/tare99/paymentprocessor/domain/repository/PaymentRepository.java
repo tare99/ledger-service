@@ -1,5 +1,6 @@
 package io.github.tare99.paymentprocessor.domain.repository;
 
+import io.github.tare99.paymentprocessor.api.request.PaymentStatus;
 import io.github.tare99.paymentprocessor.domain.entity.Payment;
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
@@ -20,4 +21,8 @@ public interface PaymentRepository
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT p FROM Payment p WHERE p.paymentId = :paymentId")
   Optional<Payment> findByPaymentIdForUpdate(String paymentId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT p FROM Payment p WHERE p.paymentId = :paymentId AND p.status = :status")
+  Optional<Payment> findByPaymentIdAndStatusForUpdate(String paymentId, PaymentStatus status);
 }
