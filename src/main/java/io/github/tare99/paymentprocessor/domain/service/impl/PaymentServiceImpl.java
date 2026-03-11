@@ -95,7 +95,7 @@ public class PaymentServiceImpl implements PaymentService {
   @Override
   @Transactional
   public RefundPaymentResponse refundPayment(String paymentId) {
-    Payment payment = getPaymentById(paymentId);
+    Payment payment = getPaymentByIdForUpdate(paymentId);
     if (payment.getStatus() != PaymentStatus.COMPLETED) {
       throw new IllegalStateException(
           "Cannot refund payment in state: "
@@ -178,6 +178,12 @@ public class PaymentServiceImpl implements PaymentService {
   private Payment getPaymentById(String paymentId) {
     return paymentRepository
         .findByPaymentId(paymentId)
+        .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
+  }
+
+  private Payment getPaymentByIdForUpdate(String paymentId) {
+    return paymentRepository
+        .findByPaymentIdForUpdate(paymentId)
         .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
   }
 

@@ -32,8 +32,7 @@ public class PaymentController {
   @PostMapping
   public ResponseEntity<CreatePaymentResponse> createPayment(
       @Valid @RequestBody CreatePaymentRequest request) {
-    return ResponseEntity.status(HttpStatus.CREATED)
-        .body(paymentService.createPayment(request));
+    return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.createPayment(request));
   }
 
   @GetMapping("/{id}")
