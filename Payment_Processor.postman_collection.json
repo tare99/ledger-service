@@ -1,0 +1,496 @@
+{
+	"info": {
+		"name": "Payment Processor",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "apiKey",
+			"value": ""
+		},
+		{
+			"key": "paymentId",
+			"value": ""
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{apiKey}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Generate API Key (Alice)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var json = pm.response.json();",
+									"    pm.collectionVariables.set('apiKey', json.apiKey);",
+									"    pm.test('API key generated', function () {",
+									"        pm.expect(json.apiKey).to.be.a('string');",
+									"        pm.expect(json.apiKey).to.match(/^pp_live_/);",
+									"        pm.expect(json.name).to.eql('postman-test');",
+									"        pm.expect(json.accountNumber).to.eql('ACC-ALICE00000000001');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"postman-test\",\n    \"accountNumber\": \"ACC-ALICE00000000001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/api-keys",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "api-keys"]
+						}
+					}
+				},
+				{
+					"name": "Generate API Key (Bob)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var json = pm.response.json();",
+									"    pm.test('API key generated for Bob', function () {",
+									"        pm.expect(json.accountNumber).to.eql('ACC-BOB000000000002');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"bob-key\",\n    \"accountNumber\": \"ACC-BOB000000000002\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/api-keys",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "api-keys"]
+						}
+					}
+				},
+				{
+					"name": "Generate API Key — Invalid Account (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Returns 404 for non-existent account', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"bad-key\",\n    \"accountNumber\": \"ACC-NONEXISTENT00001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/api-keys",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "api-keys"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Create Payment (Alice → Bob)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var json = pm.response.json();",
+									"    pm.collectionVariables.set('paymentId', json.paymentId);",
+									"    pm.test('Payment created', function () {",
+									"        pm.expect(json.paymentId).to.be.a('string');",
+									"        pm.expect(json.status).to.eql('COMPLETED');",
+									"        pm.expect(json.senderAccountId).to.eql('ACC-ALICE00000000001');",
+									"        pm.expect(json.receiverAccountId).to.eql('ACC-BOB000000000002');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set('idempotencyKey', 'req-' + Date.now());"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"requestId\": \"{{idempotencyKey}}\",\n    \"senderAccountId\": \"ACC-ALICE00000000001\",\n    \"receiverAccountId\": \"ACC-BOB000000000002\",\n    \"amount\": 100.00,\n    \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments"]
+						}
+					}
+				},
+				{
+					"name": "Create Payment — Missing Fields (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Returns 400 for missing fields', function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"senderAccountId\": \"ACC-ALICE00000000001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments"]
+						}
+					}
+				},
+				{
+					"name": "Get Payment by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Payment retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.paymentId).to.eql(pm.collectionVariables.get('paymentId'));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/{{paymentId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "{{paymentId}}"]
+						}
+					}
+				},
+				{
+					"name": "Get Payment — Not Found (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Returns 404 for unknown payment', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/PAY-NONEXISTENT",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "PAY-NONEXISTENT"]
+						}
+					}
+				},
+				{
+					"name": "Get Payment Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.status).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/{{paymentId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "{{paymentId}}", "status"]
+						}
+					}
+				},
+				{
+					"name": "List Payments",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Paginated list returned', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.payments).to.be.an('array');",
+									"    pm.expect(json.pagination).to.be.an('object');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments?page=0&size=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments"],
+							"query": [
+								{ "key": "page", "value": "0" },
+								{ "key": "size", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "List Payments — Filter by Sender",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments?senderAccountId=ACC-ALICE00000000001&page=0&size=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments"],
+							"query": [
+								{ "key": "senderAccountId", "value": "ACC-ALICE00000000001" },
+								{ "key": "page", "value": "0" },
+								{ "key": "size", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "List Payments — Filter by Receiver",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments?receiverAccountId=ACC-BOB000000000002&page=0&size=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments"],
+							"query": [
+								{ "key": "receiverAccountId", "value": "ACC-BOB000000000002" },
+								{ "key": "page", "value": "0" },
+								{ "key": "size", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "List Payments — Filter by Status",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments?status=COMPLETED&page=0&size=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments"],
+							"query": [
+								{ "key": "status", "value": "COMPLETED" },
+								{ "key": "page", "value": "0" },
+								{ "key": "size", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Refund Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Payment refunded', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.status).to.eql('REFUNDED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/{{paymentId}}/refund",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "{{paymentId}}", "refund"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Health check is UP', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/actuator/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["actuator", "health"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Security",
+			"item": [
+				{
+					"name": "Access Payments Without API Key (401/403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Unauthenticated request is rejected', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments?page=0&size=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments"],
+							"query": [
+								{ "key": "page", "value": "0" },
+								{ "key": "size", "value": "10" }
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}
