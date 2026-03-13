@@ -7,8 +7,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
       interval: 5s
@@ -24,6 +22,3 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
-volumes:
-  postgres_data:
