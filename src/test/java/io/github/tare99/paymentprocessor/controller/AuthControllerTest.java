@@ -35,9 +35,7 @@ class AuthControllerTest {
     var request = new CreateApiKeyRequest("my-key", "ACC-ALICE00000000001");
     var generatedKey =
         new GeneratedKey(
-            "pp_live_abcdefgh12345678901234567890123456789012",
-            "my-key",
-            "ACC-ALICE00000000001");
+            "pp_live_abcdefgh12345678901234567890123456789012", "my-key", "ACC-ALICE00000000001");
 
     when(apiKeyService.generate(eq("my-key"), eq("ACC-ALICE00000000001"))).thenReturn(generatedKey);
 
