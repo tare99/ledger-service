@@ -8,15 +8,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import io.github.tare99.paymentprocessor.api.controller.AuthController;
 import io.github.tare99.paymentprocessor.api.controller.AuthController.CreateApiKeyRequest;
-import io.github.tare99.paymentprocessor.domain.exception.AccountNotFoundException;
 import io.github.tare99.paymentprocessor.domain.service.ApiKeyService;
 import io.github.tare99.paymentprocessor.domain.service.ApiKeyService.GeneratedKey;
 import io.github.tare99.paymentprocessor.security.ApiKeyAuthenticationFilter;
+import io.github.tare99.paymentprocessor.security.UserPrincipal;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
@@ -25,19 +30,31 @@ import tools.jackson.databind.ObjectMapper;
 @AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 
+  private static final String ALICE = "ACC-ALICE00000000001";
+
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @MockitoBean private ApiKeyService apiKeyService;
   @MockitoBean private ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
 
+  @BeforeEach
+  void setUpAuth() {
+    authenticateAs(ALICE);
+  }
+
+  @AfterEach
+  void clearAuth() {
+    SecurityContextHolder.clearContext();
+  }
+
   @Test
   void createApiKeyReturns201() throws Exception {
-    var request = new CreateApiKeyRequest("my-key", "ACC-ALICE00000000001");
+    var request = new CreateApiKeyRequest("my-key");
     var generatedKey =
         new GeneratedKey(
-            "pp_live_abcdefgh12345678901234567890123456789012", "my-key", "ACC-ALICE00000000001");
+            "pp_live_abcdefgh12345678901234567890123456789012", "my-key", ALICE);
 
-    when(apiKeyService.generate(eq("my-key"), eq("ACC-ALICE00000000001"))).thenReturn(generatedKey);
+    when(apiKeyService.generate(eq("my-key"), eq(ALICE))).thenReturn(generatedKey);
 
     mockMvc
         .perform(
@@ -47,15 +64,12 @@ class AuthControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.apiKey").value(generatedKey.apiKey()))
         .andExpect(jsonPath("$.name").value("my-key"))
-        .andExpect(jsonPath("$.accountNumber").value("ACC-ALICE00000000001"));
+        .andExpect(jsonPath("$.accountNumber").value(ALICE));
   }
 
   @Test
   void createApiKeyWithMissingNameReturns400() throws Exception {
-    String body =
-        """
-        {"accountNumber": "ACC-ALICE00000000001"}
-        """;
+    String body = "{}";
 
     mockMvc
         .perform(
@@ -64,10 +78,10 @@ class AuthControllerTest {
   }
 
   @Test
-  void createApiKeyWithMissingAccountNumberReturns400() throws Exception {
+  void createApiKeyWithBlankNameReturns400() throws Exception {
     String body =
         """
-        {"name": "my-key"}
+        {"name": ""}
         """;
 
     mockMvc
@@ -76,32 +90,10 @@ class AuthControllerTest {
         .andExpect(status().isBadRequest());
   }
 
-  @Test
-  void createApiKeyWithBlankFieldsReturns400() throws Exception {
-    String body =
-        """
-        {"name": "", "accountNumber": ""}
-        """;
-
-    mockMvc
-        .perform(
-            post("/api/v1/auth/api-keys").contentType(MediaType.APPLICATION_JSON).content(body))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
-  void createApiKeyWithNonExistentAccountReturns404() throws Exception {
-    var request = new CreateApiKeyRequest("my-key", "ACC-NONEXISTENT00001");
-
-    when(apiKeyService.generate(eq("my-key"), eq("ACC-NONEXISTENT00001")))
-        .thenThrow(new AccountNotFoundException("Account not found: ACC-NONEXISTENT00001"));
-
-    mockMvc
-        .perform(
-            post("/api/v1/auth/api-keys")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.error").value("Account Not Found"));
+  private void authenticateAs(String accountNumber) {
+    UserPrincipal principal = new UserPrincipal(accountNumber);
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+    SecurityContextHolder.setContext(new SecurityContextImpl(auth));
   }
 }

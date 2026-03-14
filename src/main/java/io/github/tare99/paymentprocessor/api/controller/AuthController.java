@@ -2,6 +2,7 @@ package io.github.tare99.paymentprocessor.api.controller;
 
 import io.github.tare99.paymentprocessor.domain.service.ApiKeyService;
 import io.github.tare99.paymentprocessor.domain.service.ApiKeyService.GeneratedKey;
+import io.github.tare99.paymentprocessor.security.UserPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
@@ -24,12 +25,13 @@ public class AuthController {
   @PostMapping("/api-keys")
   public ResponseEntity<ApiKeyResponse> createApiKey(
       @Valid @RequestBody CreateApiKeyRequest request) {
-    GeneratedKey key = apiKeyService.generate(request.name(), request.accountNumber());
+    String accountNumber = UserPrincipal.getAuthenticatedAccountNumber();
+    GeneratedKey key = apiKeyService.generate(request.name(), accountNumber);
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(new ApiKeyResponse(key.apiKey(), key.name(), key.accountNumber()));
   }
 
-  public record CreateApiKeyRequest(@NotBlank String name, @NotBlank String accountNumber) {}
+  public record CreateApiKeyRequest(@NotBlank String name) {}
 
   public record ApiKeyResponse(String apiKey, String name, String accountNumber) {}
 }
