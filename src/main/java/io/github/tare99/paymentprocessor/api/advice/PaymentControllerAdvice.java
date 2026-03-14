@@ -2,6 +2,7 @@ package io.github.tare99.paymentprocessor.api.advice;
 
 import io.github.tare99.paymentprocessor.api.response.ErrorResponse;
 import io.github.tare99.paymentprocessor.domain.exception.AccountNotFoundException;
+import io.github.tare99.paymentprocessor.domain.exception.CurrencyMismatchException;
 import io.github.tare99.paymentprocessor.domain.exception.DuplicatePaymentException;
 import io.github.tare99.paymentprocessor.domain.exception.InsufficientFundsException;
 import io.github.tare99.paymentprocessor.domain.exception.PaymentNotFoundException;
@@ -45,6 +46,11 @@ public class PaymentControllerAdvice {
   @ExceptionHandler(InsufficientFundsException.class)
   public ResponseEntity<ErrorResponse> handleInsufficientFunds(InsufficientFundsException ex) {
     return error(HttpStatus.UNPROCESSABLE_CONTENT, "Insufficient Funds", ex.getMessage());
+  }
+
+  @ExceptionHandler(CurrencyMismatchException.class)
+  public ResponseEntity<ErrorResponse> handleCurrencyMismatch(CurrencyMismatchException ex) {
+    return error(HttpStatus.UNPROCESSABLE_CONTENT, "Currency Mismatch", ex.getMessage());
   }
 
   @ExceptionHandler(DuplicatePaymentException.class)

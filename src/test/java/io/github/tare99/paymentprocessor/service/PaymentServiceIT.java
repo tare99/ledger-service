@@ -14,6 +14,7 @@ import io.github.tare99.paymentprocessor.api.response.RefundPaymentResponse;
 import io.github.tare99.paymentprocessor.domain.entity.EntryType;
 import io.github.tare99.paymentprocessor.domain.entity.LedgerEntry;
 import io.github.tare99.paymentprocessor.domain.exception.AccountNotFoundException;
+import io.github.tare99.paymentprocessor.domain.exception.CurrencyMismatchException;
 import io.github.tare99.paymentprocessor.domain.exception.PaymentNotFoundException;
 import io.github.tare99.paymentprocessor.domain.exception.UnauthorizedPaymentAccessException;
 import io.github.tare99.paymentprocessor.domain.repository.LedgerEntryRepository;
@@ -28,6 +29,7 @@ class PaymentServiceIT extends BaseIT {
 
   private static final String ALICE = "ACC-ALICE00000000001";
   private static final String BOB = "ACC-BOB000000000002";
+  private static final String CAROL = "ACC-CAROL00000000003";
 
   @Autowired private PaymentService paymentService;
   @Autowired private LedgerEntryRepository ledgerEntryRepository;
@@ -229,6 +231,29 @@ class PaymentServiceIT extends BaseIT {
 
     assertThatThrownBy(() -> paymentService.refundPayment(created.paymentId(), ALICE))
         .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void createPaymentWithWrongRequestCurrencyThrows() {
+    var request =
+        new CreatePaymentRequest(
+            UUID.randomUUID().toString(), ALICE, BOB, new BigDecimal("10.00"), Currency.EUR);
+
+    assertThatThrownBy(() -> paymentService.createPayment(request, ALICE))
+        .isInstanceOf(CurrencyMismatchException.class)
+        .hasMessageContaining("USD")
+        .hasMessageContaining("EUR");
+  }
+
+  @Test
+  void createPaymentBetweenDifferentCurrencyAccountsThrows() {
+    var request =
+        new CreatePaymentRequest(
+            UUID.randomUUID().toString(), ALICE, CAROL, new BigDecimal("10.00"), Currency.USD);
+
+    assertThatThrownBy(() -> paymentService.createPayment(request, ALICE))
+        .isInstanceOf(CurrencyMismatchException.class)
+        .hasMessageContaining("EUR");
   }
 
   private CreatePaymentRequest paymentRequest(String sender, String receiver, String amount) {

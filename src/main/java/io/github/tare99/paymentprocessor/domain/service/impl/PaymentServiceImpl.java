@@ -1,6 +1,7 @@
 package io.github.tare99.paymentprocessor.domain.service.impl;
 
 import io.github.tare99.paymentprocessor.api.request.CreatePaymentRequest;
+import io.github.tare99.paymentprocessor.api.request.Currency;
 import io.github.tare99.paymentprocessor.api.request.PaymentStatus;
 import io.github.tare99.paymentprocessor.api.response.CreatePaymentResponse;
 import io.github.tare99.paymentprocessor.api.response.PaginatedPaymentResponse;
@@ -11,6 +12,7 @@ import io.github.tare99.paymentprocessor.domain.entity.Account;
 import io.github.tare99.paymentprocessor.domain.entity.EntryType;
 import io.github.tare99.paymentprocessor.domain.entity.LedgerEntry;
 import io.github.tare99.paymentprocessor.domain.entity.Payment;
+import io.github.tare99.paymentprocessor.domain.exception.CurrencyMismatchException;
 import io.github.tare99.paymentprocessor.domain.exception.PaymentNotFoundException;
 import io.github.tare99.paymentprocessor.domain.exception.UnauthorizedPaymentAccessException;
 import io.github.tare99.paymentprocessor.domain.mapper.PaymentMapper;
@@ -81,6 +83,7 @@ public class PaymentServiceImpl implements PaymentService {
     SenderAndReceiver senderAndReceiver =
         accountService.getSenderAndReceiverForUpdate(
             request.senderAccountId(), request.receiverAccountId());
+    validateCurrency(senderAndReceiver, request.currency());
     BigDecimal amount = request.amount().setScale(2, RoundingMode.HALF_UP);
     senderAndReceiver.applyPayment(request.amount());
 
@@ -186,6 +189,25 @@ public class PaymentServiceImpl implements PaymentService {
         entries.stream().anyMatch(e -> e.getAccount().getAccountNumber().equals(accountNumber));
     if (!isParty) {
       throw new UnauthorizedPaymentAccessException("You do not have access to this payment");
+    }
+  }
+
+  private void validateCurrency(SenderAndReceiver senderAndReceiver, Currency requestCurrency) {
+    Account sender = senderAndReceiver.sender();
+    Account receiver = senderAndReceiver.receiver();
+    if (sender.getCurrency() != requestCurrency) {
+      throw new CurrencyMismatchException(
+          "Sender account currency "
+              + sender.getCurrency()
+              + " does not match request currency "
+              + requestCurrency);
+    }
+    if (receiver.getCurrency() != requestCurrency) {
+      throw new CurrencyMismatchException(
+          "Receiver account currency "
+              + receiver.getCurrency()
+              + " does not match request currency "
+              + requestCurrency);
     }
   }
 
