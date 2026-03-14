@@ -10,18 +10,19 @@ import io.github.tare99.paymentprocessor.api.response.RefundPaymentResponse;
 
 public interface PaymentService {
 
-  CreatePaymentResponse createPayment(CreatePaymentRequest request);
+  CreatePaymentResponse createPayment(CreatePaymentRequest request, String authenticatedAccountNumber);
 
-  RefundPaymentResponse refundPayment(String paymentId);
+  RefundPaymentResponse refundPayment(String paymentId, String authenticatedAccountNumber);
 
-  PaymentResponse getPayment(String paymentId);
+  PaymentResponse getPayment(String paymentId, String authenticatedAccountNumber);
 
   PaginatedPaymentResponse listPayments(
       String senderAccountNumber,
       String receiverAccountNumber,
       PaymentStatus status,
       int page,
-      int size);
+      int size,
+      String authenticatedAccountNumber);
 
-  PaymentStatusResponse getPaymentStatus(String paymentId);
+  PaymentStatusResponse getPaymentStatus(String paymentId, String authenticatedAccountNumber);
 }

@@ -12,6 +12,7 @@ import io.github.tare99.paymentprocessor.domain.entity.EntryType;
 import io.github.tare99.paymentprocessor.domain.entity.LedgerEntry;
 import io.github.tare99.paymentprocessor.domain.entity.Payment;
 import io.github.tare99.paymentprocessor.domain.exception.PaymentNotFoundException;
+import io.github.tare99.paymentprocessor.domain.exception.UnauthorizedPaymentAccessException;
 import io.github.tare99.paymentprocessor.domain.mapper.PaymentMapper;
 import io.github.tare99.paymentprocessor.domain.repository.LedgerEntryRepository;
 import io.github.tare99.paymentprocessor.domain.repository.PaymentRepository;
@@ -59,7 +60,13 @@ public class PaymentServiceImpl implements PaymentService {
 
   @Override
   @Transactional
-  public CreatePaymentResponse createPayment(CreatePaymentRequest request) {
+  public CreatePaymentResponse createPayment(
+      CreatePaymentRequest request, String authenticatedAccountNumber) {
+    if (!request.senderAccountId().equals(authenticatedAccountNumber)) {
+      throw new UnauthorizedPaymentAccessException(
+          "You can only create payments from your own account");
+    }
+
     if (request.senderAccountId().equals(request.receiverAccountId())) {
       throw new IllegalArgumentException("Sender and receiver accounts must be different");
     }
@@ -94,7 +101,7 @@ public class PaymentServiceImpl implements PaymentService {
 
   @Override
   @Transactional
-  public RefundPaymentResponse refundPayment(String paymentId) {
+  public RefundPaymentResponse refundPayment(String paymentId, String authenticatedAccountNumber) {
     Optional<Payment> optionalPayment =
         paymentRepository.findByPaymentIdAndStatusForUpdate(paymentId, PaymentStatus.COMPLETED);
     if (optionalPayment.isEmpty()) {
@@ -106,6 +113,10 @@ public class PaymentServiceImpl implements PaymentService {
         ledgerEntryRepository.findEntriesWithAccount(payment.getId());
     LedgerEntry originalDebit = findFirstByType(originalEntries, EntryType.DEBIT);
     LedgerEntry originalCredit = findFirstByType(originalEntries, EntryType.CREDIT);
+
+    if (!originalDebit.getAccount().getAccountNumber().equals(authenticatedAccountNumber)) {
+      throw new UnauthorizedPaymentAccessException("Only the original sender can refund a payment");
+    }
 
     BigDecimal amount = originalDebit.getAmount();
 
@@ -128,9 +139,10 @@ public class PaymentServiceImpl implements PaymentService {
 
   @Override
   @Transactional(readOnly = true)
-  public PaymentResponse getPayment(String paymentId) {
+  public PaymentResponse getPayment(String paymentId, String authenticatedAccountNumber) {
     Payment payment = getPaymentById(paymentId);
     List<LedgerEntry> entries = ledgerEntryRepository.findEntriesWithAccount(payment.getId());
+    assertAccountIsParty(entries, authenticatedAccountNumber);
     return paymentMapper.toPaymentResponse(payment, entries);
   }
 
@@ -141,10 +153,12 @@ public class PaymentServiceImpl implements PaymentService {
       String receiverAccountNumber,
       PaymentStatus status,
       int page,
-      int size) {
+      int size,
+      String authenticatedAccountNumber) {
     Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
     Specification<Payment> spec =
-        buildSpecification(senderAccountNumber, receiverAccountNumber, status);
+        buildSpecification(
+            senderAccountNumber, receiverAccountNumber, status, authenticatedAccountNumber);
     Page<Payment> resultPage = paymentRepository.findAll(spec, pageable);
 
     List<Long> paymentIds = resultPage.getContent().stream().map(Payment::getId).toList();
@@ -159,9 +173,20 @@ public class PaymentServiceImpl implements PaymentService {
 
   @Override
   @Transactional(readOnly = true)
-  public PaymentStatusResponse getPaymentStatus(String paymentId) {
+  public PaymentStatusResponse getPaymentStatus(
+      String paymentId, String authenticatedAccountNumber) {
     Payment payment = getPaymentById(paymentId);
+    List<LedgerEntry> entries = ledgerEntryRepository.findEntriesWithAccount(payment.getId());
+    assertAccountIsParty(entries, authenticatedAccountNumber);
     return new PaymentStatusResponse(paymentId, payment.getStatus());
+  }
+
+  private void assertAccountIsParty(List<LedgerEntry> entries, String accountNumber) {
+    boolean isParty =
+        entries.stream().anyMatch(e -> e.getAccount().getAccountNumber().equals(accountNumber));
+    if (!isParty) {
+      throw new UnauthorizedPaymentAccessException("You do not have access to this payment");
+    }
   }
 
   private List<LedgerEntry> createLedgerEntries(
@@ -189,9 +214,22 @@ public class PaymentServiceImpl implements PaymentService {
   }
 
   private Specification<Payment> buildSpecification(
-      String senderAccountNumber, String receiverAccountNumber, PaymentStatus status) {
+      String senderAccountNumber,
+      String receiverAccountNumber,
+      PaymentStatus status,
+      String authenticatedAccountNumber) {
     return (root, query, builder) -> {
       List<Predicate> predicates = new ArrayList<>();
+
+      var partySub = query.subquery(Long.class);
+      var partyLe = partySub.from(LedgerEntry.class);
+      partySub
+          .select(partyLe.get("id"))
+          .where(
+              builder.equal(partyLe.get("payment").get("id"), root.get("id")),
+              builder.equal(
+                  partyLe.get("account").get("accountNumber"), authenticatedAccountNumber));
+      predicates.add(builder.exists(partySub));
 
       if (senderAccountNumber != null && !senderAccountNumber.isBlank()) {
         var sub = query.subquery(Long.class);

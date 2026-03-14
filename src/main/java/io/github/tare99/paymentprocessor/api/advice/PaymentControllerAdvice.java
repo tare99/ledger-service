@@ -5,6 +5,7 @@ import io.github.tare99.paymentprocessor.domain.exception.AccountNotFoundExcepti
 import io.github.tare99.paymentprocessor.domain.exception.DuplicatePaymentException;
 import io.github.tare99.paymentprocessor.domain.exception.InsufficientFundsException;
 import io.github.tare99.paymentprocessor.domain.exception.PaymentNotFoundException;
+import io.github.tare99.paymentprocessor.domain.exception.UnauthorizedPaymentAccessException;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,12 @@ public class PaymentControllerAdvice {
   @ExceptionHandler(AccountNotFoundException.class)
   public ResponseEntity<ErrorResponse> handleAccountNotFound(AccountNotFoundException ex) {
     return error(HttpStatus.NOT_FOUND, "Account Not Found", ex.getMessage());
+  }
+
+  @ExceptionHandler(UnauthorizedPaymentAccessException.class)
+  public ResponseEntity<ErrorResponse> handleUnauthorizedAccess(
+      UnauthorizedPaymentAccessException ex) {
+    return error(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage());
   }
 
   @ExceptionHandler(InsufficientFundsException.class)
