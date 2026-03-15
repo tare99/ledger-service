@@ -1,7 +1,6 @@
 package io.github.tare99.paymentprocessor.domain.entity;
 
 import com.github.f4b6a3.ulid.UlidCreator;
-import io.github.tare99.paymentprocessor.api.request.PaymentStatus;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -16,33 +15,39 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "payment")
+@Table(name = "ledger_transaction")
 @Getter
 @NoArgsConstructor
-public class Payment {
+public class Transaction {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  private String paymentId;
+  private String transactionId;
 
   @Enumerated(EnumType.STRING)
-  private PaymentStatus status;
+  private TransactionStatus status;
 
   private String idempotencyKey;
+
+  private String description;
 
   @CreationTimestamp private Instant createdAt;
 
   @UpdateTimestamp private Instant updatedAt;
 
-  public Payment(PaymentStatus status, String idempotencyKey) {
-    this.paymentId = UlidCreator.getUlid().toString();
-    this.status = status;
+  public Transaction(String idempotencyKey, String description) {
+    this.transactionId = UlidCreator.getUlid().toString();
+    this.status = TransactionStatus.POSTED;
     this.idempotencyKey = idempotencyKey;
+    this.description = description;
   }
 
-  public void updateStatus(PaymentStatus status) {
-    this.status = status;
+  public void reverse() {
+    if (this.status != TransactionStatus.POSTED) {
+      throw new IllegalStateException("Can only reverse a POSTED transaction");
+    }
+    this.status = TransactionStatus.REVERSED;
   }
 }

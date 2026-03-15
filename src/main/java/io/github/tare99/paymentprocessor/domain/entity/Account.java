@@ -33,14 +33,34 @@ public class Account {
   @Enumerated(EnumType.STRING)
   private Currency currency;
 
+  @Enumerated(EnumType.STRING)
+  private AccountType accountType;
+
   @CreationTimestamp private Instant createdAt;
 
   @UpdateTimestamp private Instant updatedAt;
 
   public void debit(BigDecimal amount) {
+    applyEntry(EntryType.DEBIT, amount);
+  }
+
+  public void credit(BigDecimal amount) {
+    applyEntry(EntryType.CREDIT, amount);
+  }
+
+  private void applyEntry(EntryType entryType, BigDecimal amount) {
     if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new IllegalArgumentException("Debit amount must be positive");
+      throw new IllegalArgumentException(entryType + " amount must be positive");
     }
+    if (accountType.increases(entryType)) {
+      this.balance = this.balance.add(amount);
+    } else {
+      requireSufficientBalance(amount);
+      this.balance = this.balance.subtract(amount);
+    }
+  }
+
+  private void requireSufficientBalance(BigDecimal amount) {
     if (this.balance.compareTo(amount) < 0) {
       throw new InsufficientFundsException(
           "Insufficient funds in account "
@@ -50,13 +70,5 @@ public class Account {
               + ", required: "
               + amount);
     }
-    this.balance = this.balance.subtract(amount);
-  }
-
-  public void credit(BigDecimal amount) {
-    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new IllegalArgumentException("Credit amount must be positive");
-    }
-    this.balance = this.balance.add(amount);
   }
 }

@@ -31,8 +31,8 @@ public class LedgerEntry {
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "payment_id", nullable = false)
-  private Payment payment;
+  @JoinColumn(name = "transaction_id", nullable = false)
+  private Transaction transaction;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "account_id", nullable = false)
@@ -49,12 +49,12 @@ public class LedgerEntry {
   @CreationTimestamp private Instant createdAt;
 
   public LedgerEntry(
-      Payment payment,
+      Transaction transaction,
       Account account,
       EntryType entryType,
       BigDecimal amount,
       BigDecimal balanceAfter) {
-    this.payment = payment;
+    this.transaction = transaction;
     this.account = account;
     this.entryType = entryType;
     this.amount = amount;

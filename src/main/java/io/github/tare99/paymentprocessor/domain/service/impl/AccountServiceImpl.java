@@ -4,9 +4,8 @@ import io.github.tare99.paymentprocessor.domain.entity.Account;
 import io.github.tare99.paymentprocessor.domain.exception.AccountNotFoundException;
 import io.github.tare99.paymentprocessor.domain.repository.AccountRepository;
 import io.github.tare99.paymentprocessor.domain.service.AccountService;
-import io.github.tare99.paymentprocessor.domain.service.dto.SenderAndReceiver;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -28,21 +27,15 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public SenderAndReceiver getSenderAndReceiverForUpdate(
-      String senderAccountNumber, String receiverAccountNumber) {
-    List<Account> accounts =
-        accountRepository.findByAccountNumbersForUpdate(
-            Set.of(senderAccountNumber, receiverAccountNumber));
-    if (accounts.size() != 2) {
-      throw new AccountNotFoundException(
-          "Accounts not found. Sender "
-              + senderAccountNumber
-              + ", receiver "
-              + receiverAccountNumber);
+  public List<Account> getAccountsForUpdate(Set<String> accountNumbers) {
+    List<Account> accounts = accountRepository.findByAccountNumbersForUpdate(accountNumbers);
+    if (accounts.size() != accountNumbers.size()) {
+      Set<String> found =
+          accounts.stream().map(Account::getAccountNumber).collect(Collectors.toSet());
+      Set<String> missing = new HashSet<>(accountNumbers);
+      missing.removeAll(found);
+      throw new AccountNotFoundException("Accounts not found: " + missing);
     }
-    Map<String, Account> accountMap =
-        accounts.stream().collect(Collectors.toMap(Account::getAccountNumber, a -> a));
-    return new SenderAndReceiver(
-        accountMap.get(senderAccountNumber), accountMap.get(receiverAccountNumber));
+    return accounts;
   }
 }
