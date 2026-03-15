@@ -10,10 +10,10 @@
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   <groupId>io.github.tare99</groupId>
-  <artifactId>payment-processor</artifactId>
+  <artifactId>ledger-service</artifactId>
   <version>1.0.0</version>
-  <name>payment-processor</name>
-  <description>Payment processing service</description>
+  <name>ledger-service</name>
+  <description>Ledger service</description>
   <url/>
   <licenses>
     <license/>
